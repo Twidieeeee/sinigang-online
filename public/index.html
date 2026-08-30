@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Sinigang Online</title>
+<style>
+:root{--bg:#fff7e8;--panel:#fff;--ink:#34251f;--muted:#806c60;--accent:#d85b3f;--green:#4f8a5b;--line:#ead9c8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:linear-gradient(160deg,#fff8eb,#f8e4c9);font-family:system-ui,sans-serif;color:var(--ink)}
+.app{max-width:720px;margin:auto;padding:14px;min-height:100vh}.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 8px 24px #6b49301c}
+h1{font-size:28px;margin:5px 0}.muted{color:var(--muted);font-size:13px}.hidden{display:none!important}
+input{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;margin:6px 0 10px;font-size:16px}button{width:100%;padding:14px;border:0;border-radius:13px;font-weight:900;font-size:15px;margin-top:7px;background:#f2e1ce;color:var(--ink)}button.primary{background:var(--accent);color:#fff}button.danger{background:#b94343;color:#fff}button.green{background:var(--green);color:#fff}button:disabled{opacity:.4}
+.code{font-size:34px;letter-spacing:6px;text-align:center;font-weight:1000;color:var(--accent);padding:12px}.players{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.player{padding:10px;border:1px solid var(--line);border-radius:13px}.active{outline:3px solid #f2a65a66}.rice{letter-spacing:1px}.family{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.member{padding:9px;border:1px solid var(--line);border-radius:14px;text-align:center;min-height:112px;background:#fffaf4}.fed{background:#eaf5e7}.face{font-size:28px}.name{font-weight:900;font-size:12px}.pref{font-size:9px;color:var(--muted)}.fedtag{font-size:10px;font-weight:900;color:var(--green)}
+.pot{min-height:105px;border:2px dashed #d8bda4;border-radius:16px;padding:12px;display:flex;gap:7px;flex-wrap:wrap}.back{width:60px;height:76px;border-radius:11px;background:linear-gradient(145deg,#d85b3f,#b93e2e);color:white;display:flex;align-items:center;justify-content:center;font-size:23px}.hand{display:flex;justify-content:center}.card{width:110px;height:135px;border:1px solid #d7c0a8;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 5px 12px #5a3d2518}.card .emoji{font-size:42px}.card .label{font-weight:900}.notice{background:#fff4d9;border-radius:12px;padding:10px;font-size:13px;margin:8px 0}.log{font-size:12px;color:var(--muted);max-height:130px;overflow:auto}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.overlay{position:fixed;inset:0;background:#2d1e18aa;display:flex;align-items:flex-end;padding:12px}.modal{background:#fffaf3;border-radius:24px;padding:20px;width:min(720px,100%);margin:auto;max-height:90vh;overflow:auto}.score{font-size:58px;text-align:center;font-weight:1000;color:var(--accent)}
+@media(max-width:560px){.players{grid-template-columns:1fr 1fr}}@media(max-width:420px){.family{grid-template-columns:repeat(2,1fr)}.players{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="app">
+<div class="panel">
+<h1>🍲 Sinigang Online</h1><div class="muted">Play with friends using a room code.</div>
+</div>
+
+<section id="home" class="panel">
+<h2>Create a game</h2><input id="createName" placeholder="Your name" maxlength="18">
+<button class="primary" onclick="createRoom()">Create Room</button>
+<hr style="border:0;border-top:1px solid #ead9c8;margin:18px 0">
+<h2>Join a game</h2><input id="joinName" placeholder="Your name" maxlength="18"><input id="joinCode" placeholder="Room code" maxlength="5" style="text-transform:uppercase">
+<button onclick="joinRoom()">Join Room</button>
+<div id="homeMsg" class="notice hidden"></div>
+</section>
+
+<section id="lobby" class="panel hidden">
+<div class="muted">ROOM CODE</div><div class="code" id="roomCode"></div>
+<div class="notice">Send this code to up to 7 friends. Everyone opens the same web address and joins with this code.</div><button onclick="copyCode()">📋 Copy Room Code</button>
+<h2>Players</h2><div class="players" id="lobbyPlayers"></div>
+<button id="startBtn" class="primary" onclick="startGame()">Start Game</button>
+<button class="green" onclick="newGame()">🆕 Start a New Game</button>
+</section>
+
+<main id="game" class="hidden">
+<section class="panel"><div class="row"><h2>Players</h2><span class="muted" id="turn"></span></div>
+<button class="green" onclick="newGame()">🆕 Start a New Game</button><div class="players" id="players"></div></section>
+<section class="panel"><div class="row"><h2>🍲 Pot</h2><span class="muted" id="potCount"></span></div><div class="pot" id="pot"></div></section>
+<section class="panel"><h2>Family</h2><div class="notice">On your turn, tap an unfed family member to feed them.</div><div class="family" id="family"></div></section>
+<section class="panel"><h2>Your hidden card</h2>
+<div class="notice">🔒 Private card: only you receive and see this card. Other players' screens never receive your card.</div>
+<div class="hand" id="hand"></div>
+<button id="potBtn" onclick="putInPot()">🍲 Put in Pot</button>
+<button id="kakain" class="danger" onclick="kakain()">📣 KAKAIN NA!</button>
+</section>
+<section class="panel"><h3>Game log</h3><div class="log" id="log"></div></section>
+</main>
+</div>
+<div id="overlay" class="overlay hidden"><div class="modal" id="modal"></div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io(); let code="",me=null,state=null;
+const $=id=>document.getElementById(id);
+function msg(t){$("homeMsg").textContent=t;$("homeMsg").classList.remove("hidden")}
+function createRoom(){socket.emit("createRoom",{name:$("createName").value.trim()||"Player 1"},r=>{if(r.ok){code=r.code;showLobby()}else msg(r.error)})}
+function joinRoom(){socket.emit("joinRoom",{code:$("joinCode").value,name:$("joinName").value.trim()||"Player"},r=>{if(r.ok){code=r.code;showLobby()}else msg(r.error)})}
+function showLobby(){$("home").classList.add("hidden");$("lobby").classList.remove("hidden");$("roomCode").textContent=code}
+function copyCode(){navigator.clipboard?.writeText(code);msg("Room code copied: "+code)}
+function startGame(){socket.emit("startGame",{code},r=>{if(r&&!r.ok)alert(r.error)})}
+function newGame(){
+  if(confirm("Start a new game? This will leave the current room.")){
+    location.reload();
+  }
+}
+function putInPot(){socket.emit("putInPot",{code})}
+function feed(i){socket.emit("feedFamily",{code,index:i})}
+function kakain(){socket.emit("kakainNa",{code})}
+function nextRound(){socket.emit("nextRound",{code})}
+socket.on("state",s=>{state=s;render(); if(s.phase==="lobby")renderLobby()});
+socket.on("result",r=>showResult(r));
+socket.on("connect",()=>{});
+function renderLobby(){
+$("lobbyPlayers").innerHTML=state.players.map((p,i)=>`<div class="player"><b>${esc(p.name)}</b><br><span class="muted">${i===0?"Host":"Player"} ${p.connected?"🟢":"🔴"}</span></div>`).join("");
+$("startBtn").classList.toggle("hidden",state.players[0]?.id!==socket.id);
+}
+function render(){
+if(!state)return;
+if(state.phase==="lobby"){renderLobby();return}
+$("lobby").classList.add("hidden");$("game").classList.remove("hidden");
+const current=state.players[state.current];
+$("turn").textContent="Turn: "+esc(current?.name||"");
+$("players").innerHTML=state.players.map((p,i)=>`<div class="player ${i===state.current?"active":""}"><b>${esc(p.name)}</b><div class="rice">${"🍚".repeat(p.vp)}${"·".repeat(5-p.vp)}</div><span class="muted">${p.vp}/5 Kanin ${p.connected?"🟢":"🔴"}</span></div>`).join("");
+$("potCount").textContent=state.potCount+" cards";
+$("pot").innerHTML=state.potCount?Array.from({length:state.potCount},()=>`<div class="back">🍲</div>`).join(""):`<span class="muted">The pot is empty.</span>`;
+$("family").innerHTML=state.family.map((m,i)=>`<div class="member ${m.isFed?"fed":""}" onclick="feed(${i})"><div class="face">${m.emoji}</div><div class="name">${esc(m.name)}</div><div class="pref">${m.pref?"Prefers "+m.pref:"Preference unspecified"}</div><div class="fedtag">${m.isFed?"✓ FED":"Tap to feed"}</div></div>`).join("");
+$("hand").innerHTML=state.myHand?`<div class="card"><div class="emoji">${state.myHand.emoji}</div><div class="label">${esc(state.myHand.name)}</div><div class="muted">🔒 Only you can see this</div></div>`:`<span class="muted">No card.</span>`;
+const mine=state.players.find(p=>p.id===socket.id), can=state.current===state.players.findIndex(p=>p.id===socket.id)&&!!state.myHand&&state.phase==="turn";
+$("potBtn").disabled=!can;$("kakain").disabled=state.phase!=="turn";
+$("log").innerHTML=state.log.map(x=>`<div>• ${esc(x)}</div>`).join("");
+if(state.phase==="gameover"&&state.winner)showGameOver(state.winner);
+}
+function showResult(r){if(state?.phase==="gameover")return;let extra=r.roundWinner?`<b>${esc(r.roundWinner)}</b> wins the round (+2 Kanin).`:`Caller loses; other players get +1 Kanin.`;open(`<h2>🍲 Round Result</h2><div class="score">${r.score}</div><p style="text-align:center;font-weight:900">${r.score>=12?"Sinigang passed!":"Sinigang failed."}</p><div class="notice">${r.breakdown.join(" • ")||"No scoring ingredients."}</div><p>${extra}</p><button class="primary" onclick="closeModal();nextRound()">Next Round</button>`)}
+function showGameOver(w){open(`<h2 style="text-align:center">🏆 Game Over</h2><div class="score">🍚</div><p style="text-align:center;font-weight:1000;font-size:20px">${esc(w)} wins!</p><button class="primary" onclick="location.reload()">New Game</button>`)}
+function open(html){$("modal").innerHTML=html;$("overlay").classList.remove("hidden")}
+function closeModal(){$("overlay").classList.add("hidden")}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+</script>
+</body></html>
